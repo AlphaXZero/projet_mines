@@ -65,9 +65,16 @@ def create_numbers(board):
     return board
 
 
+
 def make_group(board, coord):
     """ """
+    oui=[]
+    for it, x in ndenumerate(board):
+        if x == 0:
+            
 
+        
+        
 
 def main():
     """"""
