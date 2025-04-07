@@ -11,15 +11,20 @@ __version__ = 0.1
 from random import randrange
 from tabulate import tabulate
 from numpy import full, ndenumerate, count_nonzero, insert, arange
-from colorama import init, Fore, Style
+from colorama import init, Fore, Back, Style
 
 DIRECTIONS = [(0, -1), (-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1)]
 COLORS = {
+    "0": Back.WHITE,
     "1": Fore.BLUE,
     "2": Fore.GREEN,
     "3": Fore.YELLOW,
     "4": Fore.RED,
     "5": Fore.MAGENTA,
+    "6": Fore.CYAN,
+    "7": Fore.GREEN,
+    "8": Back.YELLOW,
+    "9": Back.RED
 }
 
 
@@ -54,7 +59,7 @@ def get_usrin() -> tuple[int]:
     return coord
 
 
-def get_adjacent_list(board: list, coord: tuple[int]) -> list:
+def get_adjacent_list(board: list, coord: tuple[int]) -> list[tuple[int]]:
     """
     return a list with every cells around the coord
     """
@@ -64,12 +69,13 @@ def get_adjacent_list(board: list, coord: tuple[int]) -> list:
 
 def get_adjacent_coord(board: list, coord: tuple[int]) -> tuple[int]:
     """
-    return a tuple with the index of adjacent cells around the coord
+    return a tuple with the index of intervals around the coord
+    (y_min,y_max,x_min,x_max)
     """
     x_min = max(0, coord[1] - 1)
     x_max = min(len(board[coord[0]]), coord[1] + 2)
     y_min = max(0, coord[0] - 1)
-    y_max = max(len(board) + 1, coord[0] + 2)
+    y_max = min(len(board) + 1, coord[0] + 2)
     return (y_min, y_max, x_min, x_max)
 
 
@@ -95,9 +101,10 @@ def create_numbers(board: list) -> list:
     """
     for it, _ in ndenumerate(board):
         if board[it] != 9:
-            x_min, x_max, y_min, y_max = get_adjacent_coord(board, it)
+            y_min, y_max, x_min, x_max = get_adjacent_coord(board, it)
             board[it] = count_nonzero(board[y_min:y_max, x_min:x_max] == 9)
     return board
+
 
 
 def make_group(board: list, coord: tuple[int]) -> list[tuple[int]]:
@@ -105,22 +112,17 @@ def make_group(board: list, coord: tuple[int]) -> list[tuple[int]]:
     return a list of every cell that have to be revealed
     """
     index_to_check = [coord] if board[coord] == 0 else []
-    list_with_index = [coord]
+    index_list = [coord]
     while len(index_to_check) > 0:
         new_y, new_x = index_to_check.pop()
         for y, x in DIRECTIONS:
             neww_y, neww_x = new_y + y, new_x + x
             if 0 <= neww_y < board.shape[0] and 0 <= neww_x < board.shape[1]:
-                if (
-                    board[neww_y, neww_x] == 0
-                    and (neww_y, neww_x) not in list_with_index
-                ):
+                if board[neww_y, neww_x] == 0 and (neww_y, neww_x) not in index_list:
                     index_to_check.append((neww_y, neww_x))
-                if (neww_y, neww_x) not in list_with_index and board[
-                    (neww_y, neww_x)
-                ] != 9:
-                    list_with_index.append((neww_y, neww_x))
-    return list_with_index
+                if (neww_y, neww_x) not in index_list and board[(neww_y, neww_x)] != 9:
+                    index_list.append((neww_y, neww_x))
+    return index_list
 
 
 def reveal_board(board: list, blank_board: list, index_to_reveal: tuple[int]) -> list:
@@ -148,7 +150,7 @@ def compare_boards(blank_board: list, board: list, coord: tuple[int]) -> int:
         return 1
 
 
-# TODO opti
+# TODO : faire 3 lvls diffcivultés + meilleur input + flag + opti main
 def main():
     """
     main function for the game
@@ -174,7 +176,7 @@ def main():
             print("case déjà révélé, réessayez ")
         else:
             show_board(board)
-            print("Perdu")
+            print(Fore.RED +"Perdu")
             exit()
 
 
