@@ -150,7 +150,7 @@ def compare_boards(blank_board: list, board: list, coord: tuple[int]) -> int:
         return 1
 
 
-# TODO : faire 3 lvls diffcivultés + meilleur input + flag + opti main
+# TODO : faire 3 lvls diffcivultés + meilleur input + flag + opti main + 0 en diagonale -> pas révélé normalement solutuiion regardé la la lsite des index ajouté entre haut et droite puis supprimer si 2 int
 def main():
     """
     main function for the game
