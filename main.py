@@ -8,12 +8,19 @@ __author__ = Gvanderveen
 __version__ = 0.1
 """
 
-from tabulate import tabulate
 from random import randrange
-from numpy import full, ndenumerate, count_nonzero, zeros, insert, arange
-from colorama import init, Fore, Back, Style
+from tabulate import tabulate
+from numpy import full, ndenumerate, count_nonzero, insert, arange
+from colorama import init, Fore, Style
 
 DIRECTIONS = [(0, -1), (-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1)]
+COLORS = {
+    "1": Fore.BLUE,
+    "2": Fore.GREEN,
+    "3": Fore.YELLOW,
+    "4": Fore.RED,
+    "5": Fore.MAGENTA,
+}
 
 
 def init_board(sizex: int, sizey: int) -> list:
@@ -28,6 +35,14 @@ def show_board(board: list) -> None:
     Print the board
     """
     init()
+    board = board.astype(str)
+    for it, cell in ndenumerate(board):
+        if cell == "-1":
+            board[it] = ""
+        else:
+            board[it] = f"{COLORS[cell]}{cell}{Style.RESET_ALL}"
+    board = insert(board, 0, arange(board.shape[1]).astype(str), axis=0)
+    board = insert(board, 0, arange(-1, board.shape[0] - 1).astype(str), axis=1)
     print(tabulate(board, tablefmt="simple_grid"))
 
 
@@ -84,23 +99,28 @@ def create_numbers(board: list) -> list:
             board[it] = count_nonzero(board[y_min:y_max, x_min:x_max] == 9)
     return board
 
-#TODO opti
-def make_group(board: list, coord: tuple[int]) -> list:
+
+def make_group(board: list, coord: tuple[int]) -> list[tuple[int]]:
     """
-    put all the indexs of adjacents 0 and first 0 on the coordinate selected
+    return a list of every cell that have to be revealed
     """
     index_to_check = [coord] if board[coord] == 0 else []
-    reveal = [coord]
+    list_with_index = [coord]
     while len(index_to_check) > 0:
         new_y, new_x = index_to_check.pop()
         for y, x in DIRECTIONS:
             neww_y, neww_x = new_y + y, new_x + x
             if 0 <= neww_y < board.shape[0] and 0 <= neww_x < board.shape[1]:
-                if board[neww_y, neww_x] == 0 and (neww_y, neww_x) not in reveal:
+                if (
+                    board[neww_y, neww_x] == 0
+                    and (neww_y, neww_x) not in list_with_index
+                ):
                     index_to_check.append((neww_y, neww_x))
-                if (neww_y, neww_x) not in reveal and board[(neww_y, neww_x)] != 9:
-                    reveal.append((neww_y, neww_x))
-    return reveal
+                if (neww_y, neww_x) not in list_with_index and board[
+                    (neww_y, neww_x)
+                ] != 9:
+                    list_with_index.append((neww_y, neww_x))
+    return list_with_index
 
 
 def reveal_board(board: list, blank_board: list, index_to_reveal: tuple[int]) -> list:
@@ -127,9 +147,12 @@ def compare_boards(blank_board: list, board: list, coord: tuple[int]) -> int:
     else:
         return 1
 
-#TODO opti
+
+# TODO opti
 def main():
-    """"""
+    """
+    main function for the game
+    """
     blank_board = init_board(8, 8)
     board = init_board(8, 8)
     show_board(blank_board)
@@ -157,4 +180,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
