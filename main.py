@@ -23,7 +23,7 @@ def init_board(sizex: int, sizey: int) -> list:
     return full((sizey, sizex), -1)
 
 
-def show_board(board: list[list[int]]) -> None:
+def show_board(board: list) -> None:
     """
     Print the board
     """
@@ -39,7 +39,7 @@ def get_usrin() -> tuple[int]:
     return coord
 
 
-def get_adjacent_list(board: list[list[int]], coord: tuple[int]) -> list[list[int]]:
+def get_adjacent_list(board: list, coord: tuple[int]) -> list:
     """
     return a list with every cells around the coord
     """
@@ -47,7 +47,7 @@ def get_adjacent_list(board: list[list[int]], coord: tuple[int]) -> list[list[in
     return board[y_min:y_max, x_min:x_max]
 
 
-def get_adjacent_coord(board: list[list[int]], coord: tuple[int]) -> tuple[int]:
+def get_adjacent_coord(board: list, coord: tuple[int]) -> tuple[int]:
     """
     return a tuple with the index of adjacent cells around the coord
     """
@@ -58,9 +58,7 @@ def get_adjacent_coord(board: list[list[int]], coord: tuple[int]) -> tuple[int]:
     return (y_min, y_max, x_min, x_max)
 
 
-def generate_bombs(
-    board: list[list[int]], nbr: int, usr_choice: tuple[int]
-) -> list[list[int]]:
+def generate_bombs(board: list, nbr: int, usr_choice: tuple[int]) -> list:
     """
     init nbr bombs in the board where not around the usr_choice
     """
@@ -76,7 +74,7 @@ def generate_bombs(
     return board
 
 
-def create_numbers(board: list[list[int]]) -> list[list[int]]:
+def create_numbers(board: list) -> list:
     """
     add the number of bomb arround in each cell
     """
@@ -86,8 +84,8 @@ def create_numbers(board: list[list[int]]) -> list[list[int]]:
             board[it] = count_nonzero(board[y_min:y_max, x_min:x_max] == 9)
     return board
 
-
-def make_group(board, coord):
+#TODO opti
+def make_group(board: list, coord: tuple[int]) -> list:
     """
     put all the indexs of adjacents 0 and first 0 on the coordinate selected
     """
@@ -105,16 +103,18 @@ def make_group(board, coord):
     return reveal
 
 
-def reveal_board(board, blank_board, index_to_reveal):
-    """ """
+def reveal_board(board: list, blank_board: list, index_to_reveal: tuple[int]) -> list:
+    """
+    add every board[index_to_reveal] in the blank_board
+    """
     for i in index_to_reveal:
         blank_board[i] = board[i]
     return blank_board
 
 
-def compare_boards(blank_board, board, coord) -> int:
+def compare_boards(blank_board: list, board: list, coord: tuple[int]) -> int:
     """
-    return a int dor different case
+    return a int for different case
     -1 -> loose
     0 -> already reveal
     1 -> ok
@@ -127,7 +127,7 @@ def compare_boards(blank_board, board, coord) -> int:
     else:
         return 1
 
-
+#TODO opti
 def main():
     """"""
     blank_board = init_board(8, 8)
@@ -157,15 +157,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # oui = init_board(5, 5)
-    # generate_bombs(oui, 3)
-    # create_numbers(oui)    oui = init_board(5, 5)
-    # generate_bombs(oui, 3)
-    # create_numbers(oui)
-    # show_board(oui)
 
-    # reveal_board(oui, make_group(oui, get_usrin()))
-
-    # show_board(oui)
-
-    # reveal_board(oui, make_group(oui, get_usrin()))
