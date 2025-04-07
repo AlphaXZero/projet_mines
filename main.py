@@ -16,7 +16,7 @@ from colorama import init, Fore, Back, Style
 DIRECTIONS = [(0, -1), (-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1)]
 
 
-def init_board(sizex: int, sizey: int, zero=False) -> list:
+def init_board(sizex: int, sizey: int) -> list:
     """
     Take a sizex and sizey argument and create a nparray sizex x sizey with 0 if zero is True else -1
     """
@@ -39,7 +39,7 @@ def get_usrin() -> tuple[int]:
     return coord
 
 
-def get_adjacent_coord(board: list[list[int]], coord: tuple[int]) -> list[list[int]]:
+def get_adjacent_list(board: list[list[int]], coord: tuple[int]) -> list[list[int]]:
     """
     return a list with every cells around the coord
     """
@@ -47,7 +47,7 @@ def get_adjacent_coord(board: list[list[int]], coord: tuple[int]) -> list[list[i
     return board[y_min:y_max, x_min:x_max]
 
 
-def get_adjacent_list(board, coord):
+def get_adjacent_coord(board: list[list[int]], coord: tuple[int]) -> tuple[int]:
     """
     return a tuple with the index of adjacent cells around the coord
     """
@@ -62,15 +62,12 @@ def generate_bombs(
     board: list[list[int]], nbr: int, usr_choice: tuple[int]
 ) -> list[list[int]]:
     """
-    create nbr bombs in the board
+    init nbr bombs in the board where not around the usr_choice
     """
-    non = get_adjacent_list(board, usr_choice)
+    non = get_adjacent_coord(board, usr_choice)
     bombs_added = 0
-    if count_nonzero(board == -1) < nbr:
-        return board
     while nbr != bombs_added:
-        rdm_y = randrange(0, len(board))
-        rdm_x = randrange(0, len(board[0]))
+        rdm_y, rdm_x = randrange(0, len(board)), randrange(0, len(board[0]))
         if board[rdm_y, rdm_x] == -1 and not (
             non[0] <= rdm_y <= non[1] and non[2] <= rdm_x <= non[3]
         ):
@@ -79,21 +76,17 @@ def generate_bombs(
     return board
 
 
-def create_numbers(board):
+def create_numbers(board: list[list[int]]) -> list[list[int]]:
     """
     add the number of bomb arround in each cell
     """
-    for it, x in ndenumerate(board):
+    for it, _ in ndenumerate(board):
         if board[it] != 9:
-            x_min = it[1] - 1 if it[1] - 1 > 0 else 0
-            x_max = it[1] + 2 if it[1] + 2 < len(board[it[0]]) else len(board[it[0]])
-            y_min = it[0] - 1 if it[0] - 1 > 0 else 0
-            y_max = it[0] + 2 if it[0] + 2 < len(board) + 1 else len(board) + 1
+            x_min, x_max, y_min, y_max = get_adjacent_coord(board, it)
             board[it] = count_nonzero(board[y_min:y_max, x_min:x_max] == 9)
     return board
 
 
-# TODO : opti
 def make_group(board, coord):
     """
     put all the indexs of adjacents 0 and first 0 on the coordinate selected
