@@ -23,36 +23,48 @@ def init_board(sizex: int, sizey: int, zero=False) -> list:
     return full((sizey, sizex), -1)
 
 
-def show_board(board: list) -> None:
+def show_board(board: list[list[int]]) -> None:
     """
     Print the board
     """
     init()
-    headers_col = arange(0, board.shape[0])
-    headers_row = arange(-1, headers_col.shape[0] + 1)
-    board = insert(board, board.shape[1], headers_col, axis=0)
-    board = insert(board, 0, headers_col, axis=0)
-    board = insert(board, 0, headers_row, axis=1)
-    board = insert(board, board.shape[1], headers_row, axis=1)
-    print((f"{Fore.YELLOW}  {board[0]}  {Style.RESET_ALL}")
-
     print(tabulate(board, tablefmt="simple_grid"))
-    print(board)
 
 
-def get_usrin() -> tuple:
+def get_usrin() -> tuple[int]:
     """
-    return a tuple with (row,col)
+    ask row and col and return a tuple
     """
     coord = int(input("ligne ? ")), int(input("collone ? "))
     return coord
 
 
-def generate_bombs(board, nbr, usr_choice) -> list:
+def get_adjacent_coord(board: list[list[int]], coord: tuple[int]) -> list[list[int]]:
+    """
+    return a list with every cells around the coord
+    """
+    y_min, y_max, x_min, x_max = get_adjacent_coord(board, coord)
+    return board[y_min:y_max, x_min:x_max]
+
+
+def get_adjacent_list(board, coord):
+    """
+    return a tuple with the index of adjacent cells around the coord
+    """
+    x_min = max(0, coord[1] - 1)
+    x_max = min(len(board[coord[0]]), coord[1] + 2)
+    y_min = max(0, coord[0] - 1)
+    y_max = max(len(board) + 1, coord[0] + 2)
+    return (y_min, y_max, x_min, x_max)
+
+
+def generate_bombs(
+    board: list[list[int]], nbr: int, usr_choice: tuple[int]
+) -> list[list[int]]:
     """
     create nbr bombs in the board
     """
-    non = get_adjacent(board, usr_choice, index=True)
+    non = get_adjacent_list(board, usr_choice)
     bombs_added = 0
     if count_nonzero(board == -1) < nbr:
         return board
@@ -65,18 +77,6 @@ def generate_bombs(board, nbr, usr_choice) -> list:
             board[rdm_y, rdm_x] = 9
             bombs_added += 1
     return board
-
-
-def get_adjacent(board, coord, index=False):
-    x_min = coord[1] - 1 if coord[1] - 1 > 0 else 0
-    x_max = (
-        coord[1] + 2 if coord[1] + 2 < len(board[coord[0]]) else len(board[coord[0]])
-    )
-    y_min = coord[0] - 1 if coord[0] - 1 > 0 else 0
-    y_max = coord[0] + 2 if coord[0] + 2 < len(board) + 1 else len(board) + 1
-    return (
-        board[y_min:y_max, x_min:x_max] if not index else [y_min, y_max, x_min, x_max]
-    )
 
 
 def create_numbers(board):
@@ -98,7 +98,7 @@ def make_group(board, coord):
     """
     put all the indexs of adjacents 0 and first 0 on the coordinate selected
     """
-    index_to_check = [coord]
+    index_to_check = [coord] if board[coord] == 0 else []
     reveal = [coord]
     while len(index_to_check) > 0:
         new_y, new_x = index_to_check.pop()
@@ -141,6 +141,7 @@ def main():
     board = init_board(8, 8)
     show_board(blank_board)
     usr_choice = get_usrin()
+
     create_numbers(generate_bombs(board, 7, usr_choice))
     blank_board = reveal_board(board, blank_board, make_group(board, usr_choice))
     show_board(blank_board)
