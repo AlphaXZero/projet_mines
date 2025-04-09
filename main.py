@@ -10,10 +10,11 @@ __version__ = 0.1
 
 from random import randrange
 from tabulate import tabulate
-from numpy import full, ndenumerate, count_nonzero, insert, arange
+from numpy import full, ndenumerate, count_nonzero, insert, arange, reshape
 from colorama import init, Fore, Back, Style
 
 DIRECTIONS = [(0, -1), (-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1)]
+GAME_DIFFICULTY = {1: ((8, 10), 10), 2: ((14, 20), 40), 3: ((22, 24), 99)}
 COLORS = {
     "0": Back.WHITE,
     "1": Fore.BLUE,
@@ -29,11 +30,11 @@ COLORS = {
 flag_list = []
 
 
-def init_board(sizex: int, sizey: int) -> list:
+def init_board(difficulty) -> list:
     """
     Take a sizex and sizey argument and create a nparray sizex x sizey with 0 if zero is True else -1
     """
-    return full((sizey, sizex), -1)
+    return full(GAME_DIFFICULTY[difficulty][0], -1)
 
 
 def show_board(board: list, flag: bool | tuple = False) -> None:
@@ -69,7 +70,7 @@ def get_usrin(board: list) -> tuple[int]:
     """
     while True:
         coord = input(
-            "Entrez la collone puis la ligne séparé par 1 espace \nMettez "
+            "Entrez la colonne puis la ligne séparé par 1 espace \nMettez "
             "f suivi d'un espace avant de mettre la colonne pour mettre un flag \nx pour quitter : "
         ).split(" ")
         if "x" in coord:
@@ -106,17 +107,16 @@ def get_adjacent_coord(board: list, coord: tuple[int]) -> tuple[int]:
 
 def generate_bombs(board: list, nbr: int, usr_choice: tuple[int]) -> list:
     """
-    init nbr bombs in the board where not around the usr_choice
+    init nbr bombs in the board where not around the usr_choice SAMPLE
     """
     non = get_adjacent_coord(board, usr_choice)
-    bombs_added = 0
-    while nbr != bombs_added:
-        rdm_y, rdm_x = randrange(0, len(board)), randrange(0, len(board[0]))
-        if board[rdm_y, rdm_x] == -1 and not (
-            non[0] <= rdm_y <= non[1] and non[2] <= rdm_x <= non[3]
-        ):
-            board[rdm_y, rdm_x] = 9
-            bombs_added += 1
+    non = [(i, j) for i in range(1, 4) for j in range(1, 4)]
+    index_list = []
+    for it, _ in ndenumerate(board):
+        if it not in non:
+            index_list.append(it)
+    for i in range(nbr):
+        board[index_list.pop(randrange(0, len(index_list)))] = 9
     return board
 
 
@@ -158,7 +158,9 @@ def reveal_board(board: list, blank_board: list, index_to_reveal: tuple[int]) ->
     return blank_board
 
 
-def compare_boards(blank_board: list, board: list, coord: tuple[int]) -> int:
+def compare_boards(
+    blank_board: list, board: list, coord: tuple[int], game_diffculty
+) -> int:
     """
     return a int for different case
     -1 -> loose
@@ -168,10 +170,22 @@ def compare_boards(blank_board: list, board: list, coord: tuple[int]) -> int:
     coord = coord[1], coord[0]
     if board[coord] == 9:
         return -1
+    if count_nonzero(blank_board == -1) == GAME_DIFFICULTY[game_diffculty][1]:
+        return 2
     if board[coord] == blank_board[coord]:
         return 0
     else:
         return 1
+
+
+def get_settings():
+    """"""
+    while True:
+        game_diff = input(
+            "Choissisez un niveau de diffciulté 1 facile 2 moyen 3 difficile : "
+        )
+        if game_diff in ("1", "2", "3"):
+            return int(game_diff)
 
 
 # TODO : faire 3 lvls diffcivultés + meilleur input + flag + opti main + 0 en diagonale -> pas révélé normalement solutuiion regardé la la lsite des index ajouté entre haut et droite puis supprimer si 2 int
@@ -179,29 +193,21 @@ def main():
     """
     main function for the game
     """
-    blank_board = init_board(8, 8)
-    board = init_board(8, 8)
-    show_board(blank_board)
-    usr_choice = get_usrin(blank_board)
-
-    create_numbers(generate_bombs(board, 7, usr_choice))
-    blank_board = reveal_board(board, blank_board, make_group(board, usr_choice))
-    show_board(blank_board)
+    settings = get_settings()
+    board = []
+    blank_board = init_board(settings)
     while True:
-        usr_choice = get_usrin(blank_board)
-        check_cell = compare_boards(blank_board, board, usr_choice)
-        print(check_cell)
-        if check_cell == 1:
-            blank_board = reveal_board(
-                board, blank_board, make_group(board, usr_choice)
+        user_choice = get_usrin(board)
+        show_board(blank_board)
+        if board == []:
+            board = create_numbers(
+                generate_bombs(
+                    init_board(settings), GAME_DIFFICULTY[settings][1], user_choice
+                )
             )
-            show_board(blank_board)
-        elif check_cell == 0:
-            print("case déjà révélé, réessayez ")
-        else:
             show_board(board)
-            print(Fore.RED + "Perdu")
-            exit()
+        else:
+            cell_spec = compare_boards(blank_board, board, user_choice, settings)
 
 
 if __name__ == "__main__":
