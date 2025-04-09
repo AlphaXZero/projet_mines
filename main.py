@@ -24,8 +24,9 @@ COLORS = {
     "6": Fore.CYAN,
     "7": Fore.GREEN,
     "8": Back.YELLOW,
-    "9": Back.RED
+    "9": Back.RED,
 }
+flag_list = []
 
 
 def init_board(sizex: int, sizey: int) -> list:
@@ -35,12 +36,14 @@ def init_board(sizex: int, sizey: int) -> list:
     return full((sizey, sizex), -1)
 
 
-def show_board(board: list) -> None:
+def show_board(board: list, flag: bool | tuple = False) -> None:
     """
     Print the board
     """
+    global flag_list
     init()
     board = board.astype(str)
+
     for it, cell in ndenumerate(board):
         if cell == "-1":
             board[it] = ""
@@ -48,15 +51,37 @@ def show_board(board: list) -> None:
             board[it] = f"{COLORS[cell]}{cell}{Style.RESET_ALL}"
     board = insert(board, 0, arange(board.shape[1]).astype(str), axis=0)
     board = insert(board, 0, arange(-1, board.shape[0] - 1).astype(str), axis=1)
+    if flag:
+        if 0 <= flag[0] + 1 <= board.shape[1] and 0 <= flag[1] + 1 <= board.shape[0]:
+            if (flag[1] + 1, flag[0] + 1) in flag_list:
+                flag_list.remove((flag[1] + 1, flag[0] + 1))
+            else:
+                flag_list.append((flag[1] + 1, flag[0] + 1))
+    for cell in flag_list:
+        board[cell] = f"{Back.RED}/>{Style.RESET_ALL}"
     print(tabulate(board, tablefmt="simple_grid"))
+    return board
 
 
-def get_usrin() -> tuple[int]:
+def get_usrin(board: list) -> tuple[int]:
     """
     ask row and col and return a tuple
     """
-    coord = int(input("ligne ? ")), int(input("collone ? "))
-    return coord
+    while True:
+        coord = input(
+            "Entrez la collone puis la ligne séparé par 1 espace \nMettez "
+            "f suivi d'un espace avant de mettre la colonne pour mettre un flag \nx pour quitter : "
+        ).split(" ")
+        if "x" in coord:
+            quit()
+        flag = True if len(coord) == 3 and coord[0] in ("f", "F") else False
+        if flag:
+            coord = coord[1:]
+        if len(coord) == 2 and coord[0].isdigit() and coord[1].isdigit():
+            if flag:
+                show_board(board, (int(coord[0]), int(coord[1])))
+            else:
+                return int(coord[0]), int(coord[1])
 
 
 def get_adjacent_list(board: list, coord: tuple[int]) -> list[tuple[int]]:
@@ -106,7 +131,6 @@ def create_numbers(board: list) -> list:
     return board
 
 
-
 def make_group(board: list, coord: tuple[int]) -> list[tuple[int]]:
     """
     return a list of every cell that have to be revealed
@@ -141,7 +165,7 @@ def compare_boards(blank_board: list, board: list, coord: tuple[int]) -> int:
     0 -> already reveal
     1 -> ok
     """
-
+    coord = coord[1], coord[0]
     if board[coord] == 9:
         return -1
     if board[coord] == blank_board[coord]:
@@ -158,13 +182,13 @@ def main():
     blank_board = init_board(8, 8)
     board = init_board(8, 8)
     show_board(blank_board)
-    usr_choice = get_usrin()
+    usr_choice = get_usrin(blank_board)
 
     create_numbers(generate_bombs(board, 7, usr_choice))
     blank_board = reveal_board(board, blank_board, make_group(board, usr_choice))
     show_board(blank_board)
     while True:
-        usr_choice = get_usrin()
+        usr_choice = get_usrin(blank_board)
         check_cell = compare_boards(blank_board, board, usr_choice)
         print(check_cell)
         if check_cell == 1:
@@ -176,7 +200,7 @@ def main():
             print("case déjà révélé, réessayez ")
         else:
             show_board(board)
-            print(Fore.RED +"Perdu")
+            print(Fore.RED + "Perdu")
             exit()
 
 
