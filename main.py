@@ -102,18 +102,22 @@ def get_adjacent_coord(board: list, coord: tuple[int]) -> tuple[int]:
     x_max = min(len(board[coord[0]]), coord[1] + 2)
     y_min = max(0, coord[0] - 1)
     y_max = min(len(board) + 1, coord[0] + 2)
-    return (y_min, y_max, x_min, x_max)
+    return (x_min, x_max, y_min, y_max)
 
 
 def generate_bombs(board: list, nbr: int, usr_choice: tuple[int]) -> list:
     """
     init nbr bombs in the board where not around the usr_choice SAMPLE
     """
-    non = get_adjacent_coord(board, usr_choice)
-    non = [(i, j) for i in range(1, 4) for j in range(1, 4)]
+    adjacent_tiles = get_adjacent_coord(board, usr_choice)
+    adjacent_tiles_list = [
+        (i, j)
+        for i in range(adjacent_tiles[0], adjacent_tiles[1])
+        for j in range(adjacent_tiles[2], adjacent_tiles[3])
+    ]
     index_list = []
     for it, _ in ndenumerate(board):
-        if it not in non:
+        if it not in adjacent_tiles_list:
             index_list.append(it)
     for i in range(nbr):
         board[index_list.pop(randrange(0, len(index_list)))] = 9
@@ -194,20 +198,25 @@ def main():
     main function for the game
     """
     settings = get_settings()
-    board = []
+    board = None
     blank_board = init_board(settings)
     while True:
-        user_choice = get_usrin(board)
         show_board(blank_board)
-        if board == []:
+        user_choice = get_usrin(board)
+
+        if board is None:
             board = create_numbers(
                 generate_bombs(
                     init_board(settings), GAME_DIFFICULTY[settings][1], user_choice
                 )
             )
-            show_board(board)
-        else:
-            cell_spec = compare_boards(blank_board, board, user_choice, settings)
+        cell_spec = compare_boards(blank_board, board, user_choice, settings)
+        if cell_spec == 1:
+            print(make_group(board, user_choice))
+            blank_board = reveal_board(
+                board, blank_board, make_group(board, user_choice)
+            )
+        show_board(board)
 
 
 if __name__ == "__main__":
